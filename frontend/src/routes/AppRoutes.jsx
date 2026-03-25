@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 
 // Layouts
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -61,10 +62,47 @@ import RevenueDashboard from '../pages/revenue-forecast/RevenueDashboard';
 import ForecastReport from '../pages/revenue-forecast/ForecastReport';
 import MarginTrends from '../pages/revenue-forecast/MarginTrends';
 
-// Pages - Settings
+//setting page 
 import Settings from '../pages/settings/Settings';
 
 const AppRoutes = () => {
+
+  const ProtectedRoute = ({ children, allowedRoles }) => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    
+    // 1. If NO user is logged in, ALWAYS kick them out to the login page
+    if (!currentUser) {
+      return <Navigate to="/login" replace />;
+    }
+
+    // 2. If user IS logged in but lacks the correct role, show the Access Denied screen
+    if (!allowedRoles.includes(currentUser.role)) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[80vh] text-center animate-in fade-in zoom-in duration-500 p-6">
+          <div className="p-6 bg-rose-500/10 rounded-[2rem] mb-8 border border-rose-500/20 shadow-[0_0_40px_-10px_rgba(244,63,94,0.3)]">
+            <ShieldAlert className="w-20 h-20 text-rose-500" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4">
+            Access <span className="text-rose-500">Restricted</span>
+          </h1>
+          <p className="text-slate-400 max-w-md mx-auto mb-10 text-base md:text-lg">
+            Your current security clearance level (<span className="text-slate-200 font-bold">{currentUser.role}</span>) 
+            does not authorize you to view or modify this module.
+          </p>
+          <Link 
+            to="/dashboard" 
+            className="px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white rounded-xl font-bold transition-all shadow-lg hover:border-slate-600"
+          >
+            Return to Dashboard
+          </Link>
+        </div>
+      );
+    }
+
+    // 3. If they pass all checks, render the page normally
+    return children;
+  };
+
   return (
     <Router>
       <Routes>
@@ -73,64 +111,71 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Dashboard and Main App Routes */}
-        <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+        {/* Dashboard (Everyone who is logged in can see this) */}
+        <Route path="/dashboard" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead', 'Viewers']}><Dashboard /></ProtectedRoute></DashboardLayout>} />
         
-        {/* Organization */}
-        <Route path="/organization/company-setup" element={<DashboardLayout><CompanySetup /></DashboardLayout>} />
-        <Route path="/organization/billing-model" element={<DashboardLayout><BillingModel /></DashboardLayout>} />
-        <Route path="/organization/department-mapping" element={<DashboardLayout><DepartmentMapping /></DashboardLayout>} />
+        {/* --- Organization --- */}
+        <Route path="/organization/company-setup" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin']}><CompanySetup /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/organization/billing-model" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin']}><BillingModel /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/organization/department-mapping" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin']}><DepartmentMapping /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Employee Cost */}
-        <Route path="/employee-cost/list" element={<DashboardLayout><EmployeeCostList /></DashboardLayout>} />
-        <Route path="/employee-cost/add" element={<DashboardLayout><AddEmployeeCost /></DashboardLayout>} />
-        <Route path="/employee-cost/breakdown" element={<DashboardLayout><CostBreakdown /></DashboardLayout>} />
+        {/* --- Employee Cost Engine --- */}
+        {/* View Access */}
+        <Route path="/employee-cost/list" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><EmployeeCostList /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/employee-cost/breakdown" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><CostBreakdown /></ProtectedRoute></DashboardLayout>} />
+        {/* Write Access (PM & Team Lead Blocked) */}
+        <Route path="/employee-cost/add" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'HR']}><AddEmployeeCost /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/employee-cost/edit/:id" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'HR']}><AddEmployeeCost /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Billing */}
-        <Route path="/billing/rate-config" element={<DashboardLayout><BillingRateConfig /></DashboardLayout>} />
-        <Route path="/billing/margin-calculator" element={<DashboardLayout><MarginCalculator /></DashboardLayout>} />
-        <Route path="/billing/scenario-simulator" element={<DashboardLayout><ScenarioSimulator /></DashboardLayout>} />
+        {/* --- Billing Calculator --- */}
+        <Route path="/billing/rate-config" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><BillingRateConfig /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/billing/margin-calculator" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><MarginCalculator /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/billing/scenario-simulator" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><ScenarioSimulator /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Margin Tracker */}
-        <Route path="/margin-tracker/dashboard" element={<DashboardLayout><ProjectMarginDashboard /></DashboardLayout>} />
-        <Route path="/margin-tracker/budget-tracking" element={<DashboardLayout><BudgetTracking /></DashboardLayout>} />
-        <Route path="/margin-tracker/burn-rate" element={<DashboardLayout><BurnRate /></DashboardLayout>} />
+        <Route path="/margin-tracker/dashboard" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead', 'Viewers']}><ProjectMarginDashboard /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/margin-tracker/budget-tracking" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead', 'Viewers']}><BudgetTracking /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/margin-tracker/burn-rate" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead', 'Viewers']}><BurnRate /></ProtectedRoute></DashboardLayout>} />
 
-        {/* AI Prediction */}
-        <Route path="/ai-prediction/margin-prediction" element={<DashboardLayout><MarginPrediction /></DashboardLayout>} />
-        <Route path="/ai-prediction/risk-analysis" element={<DashboardLayout><RiskAnalysis /></DashboardLayout>} />
-        <Route path="/ai-prediction/forecast-insights" element={<DashboardLayout><ForecastInsights /></DashboardLayout>} />
+        {/* --- AI Margin Prediction --- */}
+        <Route path="/ai-prediction/margin-prediction" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><MarginPrediction /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/ai-prediction/risk-analysis" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><RiskAnalysis /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/ai-prediction/forecast-insights" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Team Lead']}><ForecastInsights /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Resource Allocation */}
-        <Route path="/resource-allocation/dashboard" element={<DashboardLayout><ResourceDashboard /></DashboardLayout>} />
-        <Route path="/resource-allocation/skill-mapping" element={<DashboardLayout><SkillMapping /></DashboardLayout>} />
-        <Route path="/resource-allocation/availability-tracker" element={<DashboardLayout><AvailabilityTracker /></DashboardLayout>} />
+        {/* --- Resource Allocation --- */}
+        <Route path="/resource-allocation/dashboard" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><ResourceDashboard /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/resource-allocation/skill-mapping" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><SkillMapping /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/resource-allocation/availability-tracker" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><AvailabilityTracker /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Bench Management */}
-        <Route path="/bench-management/list" element={<DashboardLayout><BenchList /></DashboardLayout>} />
-        <Route path="/bench-management/cost-analysis" element={<DashboardLayout><BenchCostAnalysis /></DashboardLayout>} />
-        <Route path="/bench-management/reallocation-suggestions" element={<DashboardLayout><ReallocationSuggestions /></DashboardLayout>} />
+        {/* --- Bench Management --- */}
+        <Route path="/bench-management/list" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><BenchList /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/bench-management/cost-analysis" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><BenchCostAnalysis /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/bench-management/reallocation-suggestions" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><ReallocationSuggestions /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Contract Analyzer */}
-        <Route path="/contract-analyzer/upload" element={<DashboardLayout><UploadContract /></DashboardLayout>} />
-        <Route path="/contract-analyzer/insights" element={<DashboardLayout><ContractInsights /></DashboardLayout>} />
-        <Route path="/contract-analyzer/sla-analysis" element={<DashboardLayout><SLAAnalysis /></DashboardLayout>} />
+        {/* --- Contract Analyzer --- */}
+        {/* View Access */}
+        <Route path="/contract-analyzer/insights" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager']}><ContractInsights /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/contract-analyzer/sla-analysis" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager']}><SLAAnalysis /></ProtectedRoute></DashboardLayout>} />
+        {/* Write Access (PM Blocked) */}
+        <Route path="/contract-analyzer/upload" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin']}><UploadContract /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Invoicing */}
-        <Route path="/invoicing/list" element={<DashboardLayout><InvoiceList /></DashboardLayout>} />
-        <Route path="/invoicing/generate" element={<DashboardLayout><GenerateInvoice /></DashboardLayout>} />
-        <Route path="/invoicing/payment-tracking" element={<DashboardLayout><PaymentTracking /></DashboardLayout>} />
+        {/* --- Automated Invoicing --- */}
+        {/* View Access */}
+        <Route path="/invoicing/list" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Viewers']}><InvoiceList /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/invoicing/payment-tracking" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'Viewers']}><PaymentTracking /></ProtectedRoute></DashboardLayout>} />
+        
+        {/* Write Access (PM and Viewers Blocked) */}
+        <Route path="/invoicing/generate" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin']}><GenerateInvoice /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Revenue Forecast */}
-        <Route path="/revenue-forecast/dashboard" element={<DashboardLayout><RevenueDashboard /></DashboardLayout>} />
-        <Route path="/revenue-forecast/report" element={<DashboardLayout><ForecastReport /></DashboardLayout>} />
-        <Route path="/revenue-forecast/margin-trends" element={<DashboardLayout><MarginTrends /></DashboardLayout>} />
+        {/* --- Revenue Forecast --- */}
+        <Route path="/revenue-forecast/dashboard" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><RevenueDashboard /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/revenue-forecast/report" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><ForecastReport /></ProtectedRoute></DashboardLayout>} />
+        <Route path="/revenue-forecast/margin-trends" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead']}><MarginTrends /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Settings */}
-        <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
+        
+        <Route path="/settings" element={<DashboardLayout><ProtectedRoute allowedRoles={['Super Admin', 'Company Admin', 'Project Manager', 'HR', 'Team Lead', 'Viewers']}><Settings /></ProtectedRoute></DashboardLayout>} />
 
-        {/* Redirect for unknown routes */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all Redirect */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { TrendingUp, Mail, Lock, User, Phone, MapPin, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
+import { TrendingUp, Mail, Lock, User, Phone, MapPin, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 
 const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState('');
+  
   const [formData, setFormData] = useState({
     fullName: '',
     contactNo: '',
@@ -17,15 +21,6 @@ const Register = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const roleEmailMap = {
-    'Super Admin': 'nayan@kavyainfoweb.com',
-    'Company Admin': 'sushil@kavyainfoweb.com',
-    'Project Manager': 'rajni@kavyainfoweb.com',
-    'HR': 'raj@kavyainfoweb.com',
-    'Team Lead': 'priti@kavyainfoweb.com',
-    'Viewers': 'viewer@kavyainfoweb.com'
-  };
-
   const validatePassword = (pass) => {
     const hasNumber = /\d/.test(pass);
     const hasUpper = /[A-Z]/.test(pass);
@@ -35,53 +30,39 @@ const Register = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === 'contactNo') {
-      // Only numbers and max 10 digits
       const cleanedValue = value.replace(/\D/g, '').slice(0, 10);
       setFormData({ ...formData, [name]: cleanedValue });
     } else {
       setFormData({ ...formData, [name]: value });
     }
-    // Clear error for the field being edited
+    
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
+    if (serverError) setServerError('');
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
-    // Basic required validation
+    // 1. Basic required validation
     Object.keys(formData).forEach(key => {
       if (!formData[key]) {
         newErrors[key] = 'Required';
       }
     });
 
-    // Contact No validation
+    // 2. Contact No validation
     if (formData.contactNo && formData.contactNo.length !== 10) {
       newErrors.contactNo = 'Must be exactly 10 digits';
     }
 
-    // Role-Email validation
-    if (formData.userRole && formData.email) {
-      const allowedEmails = Object.values(roleEmailMap);
-      if (!allowedEmails.includes(formData.email)) {
-        newErrors.email = 'This email is not authorized for registration';
-      } else {
-        const expectedEmail = roleEmailMap[formData.userRole];
-        if (formData.email !== expectedEmail) {
-          newErrors.email = `Only ${expectedEmail} is accepted for ${formData.userRole}`;
-        }
-      }
-    }
-
-    // Password validation
+    // 3. Password validation
     if (formData.password && !validatePassword(formData.password)) {
       newErrors.password = 'Must be 8+ chars, include a number and a capital letter';
     }
 
-    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
@@ -91,16 +72,26 @@ const Register = () => {
       return;
     }
 
-    // If all valid, simulate registration success and navigate to login
-    localStorage.setItem('registeredUser', JSON.stringify({
-      fullName: formData.fullName,
-      email: formData.email,
-      password: formData.password,
-      role: formData.userRole
-    }));
-    
-    alert('Registration successful! Please login.');
-    navigate('/login');
+    // --- DB SAVING LOGIC ---
+    setIsSubmitting(true);
+    setServerError('');
+
+    try {
+      // Send data to the backend API (ignoring confirmPassword)
+      const { confirmPassword, ...userData } = formData;
+      
+      const response = await axios.post("http://localhost:5000/api/auth/register", userData);
+      
+      alert('Registration successful! Please login.');
+      navigate('/login');
+    } catch (error) {
+      console.error("Registration failed:", error);
+      // This will automatically display the backend error if they aren't in the Employee DB 
+      // or if they select a role higher than their actual HR designation!
+      setServerError(error.response?.data?.message || "Failed to connect to the server. Is your backend running?");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -114,6 +105,14 @@ const Register = () => {
           <p className="text-slate-400 mt-2 font-medium">Create your enterprise account</p>
         </div>
 
+        {/* Display backend errors dynamically */}
+        {serverError && (
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 text-sm font-bold">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            {serverError}
+          </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleRegister}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Full Name */}
@@ -122,11 +121,7 @@ const Register = () => {
               <div className="relative group">
                 <User className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <input 
-                  type="text" 
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="e.g. Nayan Sharma"
+                  type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g. Nayan Sharma"
                   className={`w-full pl-12 pr-4 py-3.5 bg-slate-950 border ${errors.fullName ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium`}
                 />
               </div>
@@ -139,11 +134,7 @@ const Register = () => {
               <div className="relative group">
                 <Phone className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <input 
-                  type="text" 
-                  name="contactNo"
-                  value={formData.contactNo}
-                  onChange={handleInputChange}
-                  placeholder="9876543210"
+                  type="text" name="contactNo" value={formData.contactNo} onChange={handleInputChange} placeholder="9876543210"
                   className={`w-full pl-12 pr-4 py-3.5 bg-slate-950 border ${errors.contactNo ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium`}
                 />
               </div>
@@ -156,9 +147,7 @@ const Register = () => {
               <div className="relative group">
                 <ShieldCheck className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <select 
-                  name="userRole"
-                  value={formData.userRole}
-                  onChange={handleInputChange}
+                  name="userRole" value={formData.userRole} onChange={handleInputChange}
                   className={`w-full pl-12 pr-4 py-3.5 bg-slate-950 border ${errors.userRole ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white appearance-none cursor-pointer font-medium`}
                 >
                   <option value="" disabled className="bg-slate-950">Select User Role</option>
@@ -179,11 +168,7 @@ const Register = () => {
               <div className="relative group">
                 <Mail className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <input 
-                  type="email" 
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="name@kavyainfoweb.com"
+                  type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="name@company.com"
                   className={`w-full pl-12 pr-4 py-3.5 bg-slate-950 border ${errors.email ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium`}
                 />
               </div>
@@ -196,16 +181,11 @@ const Register = () => {
               <div className="relative group">
                 <Lock className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <input 
-                  type={showPassword ? "text" : "password"} 
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleInputChange} placeholder="••••••••"
                   className={`w-full pl-12 pr-12 py-3.5 bg-slate-950 border ${errors.password ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium`}
                 />
                 <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-500 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -220,16 +200,11 @@ const Register = () => {
               <div className="relative group">
                 <Lock className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
                 <input 
-                  type={showConfirmPassword ? "text" : "password"} 
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  placeholder="••••••••"
+                  type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} placeholder="••••••••"
                   className={`w-full pl-12 pr-12 py-3.5 bg-slate-950 border ${errors.confirmPassword ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium`}
                 />
                 <button 
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-500 transition-colors"
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -245,20 +220,20 @@ const Register = () => {
             <div className="relative group">
               <MapPin className="w-5 h-5 text-slate-500 absolute left-4 top-4 group-focus-within:text-blue-500 transition-colors" />
               <textarea 
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                rows="3"
-                placeholder="Complete office address..."
+                name="address" value={formData.address} onChange={handleInputChange} rows="3" placeholder="Complete office address..."
                 className={`w-full pl-12 pr-4 py-3.5 bg-slate-950 border ${errors.address ? 'border-rose-500' : 'border-slate-800'} rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 resize-none font-medium`}
               ></textarea>
             </div>
             {errors.address && <p className="text-[10px] text-rose-500 font-bold ml-1">{errors.address}</p>}
           </div>
 
-          <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] mt-4">
-            Create Account
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Creating Account..." : "Create Account"}
+            {!isSubmitting && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

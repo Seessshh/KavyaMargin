@@ -4,6 +4,11 @@ import { DollarSign, Plus, Trash2, Edit2, Download, Info, Search, X } from 'luci
 import { exportToCSV } from '../../utils/exportUtils';
 
 const BillingRateConfig = () => {
+  // --- 1. RBAC SECURITY CHECK ---
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  // Only these roles can Add, Edit, or Delete. Everyone else (like Team Leads) is Read-Only!
+  const canEditBilling = ['Super Admin', 'Company Admin', 'Project Manager'].includes(currentUser?.role);
+
   const [rates, setRates] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -109,19 +114,23 @@ const BillingRateConfig = () => {
             <Download className="w-4 h-4" />
             Export CSV
           </button>
-          <button 
-            onClick={() => openModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Rate
-          </button>
+          
+          {/* SECURED: Only allowed roles can see the Add button */}
+          {canEditBilling && (
+            <button 
+              onClick={() => openModal()}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Rate
+            </button>
+          )}
         </div>
       </header>
 
       {/* Search and Quick Info */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-sm transition-colors">
+        <div className="md:col-span-2 bg-slate-900/50 backdrop-blur-sm p-4 rounded-2xl border border-slate-800 shadow-sm transition-colors">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
@@ -129,7 +138,7 @@ const BillingRateConfig = () => {
               placeholder="Search roles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-transparent rounded-xl text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-slate-800 transition-all outline-none text-slate-200"
+              className="w-full pl-10 pr-4 py-2 bg-slate-950/50 border border-transparent rounded-xl text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-slate-800 transition-all outline-none text-slate-200"
             />
           </div>
         </div>
@@ -142,26 +151,29 @@ const BillingRateConfig = () => {
       </div>
 
       {/* Rates Table */}
-      <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-sm overflow-hidden transition-colors">
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800 shadow-sm overflow-hidden transition-colors">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-800/50 border-b border-slate-800">
+              <tr className="bg-slate-800/30 border-b border-slate-800">
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">Role / Designation</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Offshore Rate (/hr)</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Onshore Rate (/hr)</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Status</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
+                {/* SECURED: Hide the Actions column header for Read-Only users */}
+                {canEditBilling && (
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
+                )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-800/50">
               {loading ? (
-                <tr><td colSpan="5" className="text-center py-8 text-slate-500">Loading rates...</td></tr>
+                <tr><td colSpan={canEditBilling ? "5" : "4"} className="text-center py-8 text-slate-500">Loading rates...</td></tr>
               ) : filteredRates.length === 0 ? (
-                <tr><td colSpan="5" className="text-center py-8 text-slate-500">No rates found. Click "Add New Rate" to begin.</td></tr>
+                <tr><td colSpan={canEditBilling ? "5" : "4"} className="text-center py-8 text-slate-500">No rates found.</td></tr>
               ) : (
                 filteredRates.map((rate) => (
-                  <tr key={rate._id} className="hover:bg-slate-800/50 transition-colors group">
+                  <tr key={rate._id} className="hover:bg-slate-800/30 transition-colors group">
                     <td className="px-6 py-4">
                       <span className="text-sm font-bold text-slate-200">{rate.role}</span>
                     </td>
@@ -180,16 +192,20 @@ const BillingRateConfig = () => {
                         {rate.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openModal(rate)} className="p-2 text-slate-500 hover:text-primary-400 hover:bg-slate-800 rounded-lg transition-all">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(rate._id)} className="p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-all">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                    
+                    {/* SECURED: Hide the Edit/Delete buttons for Read-Only users */}
+                    {canEditBilling && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openModal(rate)} className="p-2 text-slate-500 hover:text-primary-400 hover:bg-slate-800 rounded-lg transition-all">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(rate._id)} className="p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-all">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -199,8 +215,8 @@ const BillingRateConfig = () => {
       </div>
 
       {/* --- ADD / EDIT MODAL --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      {isModalOpen && canEditBilling && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-slate-100">{editingRate ? 'Edit' : 'Add'} Billing Rate</h3>

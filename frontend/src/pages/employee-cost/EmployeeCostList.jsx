@@ -1,26 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Download, Plus, MoreVertical, Trash2, Edit2 } from 'lucide-react';
-import { exportToCSV, exportToPDF } from '../../utils/exportUtils';
+import { exportToCSV, exportToXML } from '../../utils/exportUtils';
 import { Link } from 'react-router-dom';
 
 const EmployeeCostList = () => {
-  const [employees, setEmployees] = useState([
-    { id: 1, name: 'Amit Verma', role: 'Senior Developer', department: 'Engineering', CTC: 1800000, monthlyCost: 150000, status: 'Active' },
-    { id: 2, name: 'Sonal Singh', role: 'UI/UX Designer', department: 'Design', CTC: 1200000, monthlyCost: 100000, status: 'Active' },
-    { id: 3, name: 'Rahul Reddy', role: 'Product Manager', department: 'Product', CTC: 2400000, monthlyCost: 200000, status: 'Active' },
-    { id: 4, name: 'Pooja Gupta', role: 'Backend Engineer', department: 'Engineering', CTC: 1500000, monthlyCost: 125000, status: 'Active' },
-    { id: 5, name: 'Kiran Deep', role: 'QA Lead', department: 'Engineering', CTC: 1400000, monthlyCost: 116666, status: 'Bench' },
-  ]);
-
+  // Start with an empty array. Data will now ONLY come from MongoDB.
+  const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    // Keep getting the current user from localStorage for auth purposes
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    setCurrentUser(user);
 
-  const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    // FETCH FROM MONGODB
+    const fetchEmployees = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/employees');
+        if (response.ok) {
+          const dbEmployees = await response.json();
+          if (Array.isArray(dbEmployees)) {
+            setEmployees(dbEmployees);
+          }
+        } else {
+          console.error('Failed to fetch employees');
+        }
+      } catch (error) {
+        console.error("Error connecting to database:", error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  // DELETE FROM MONGODB
+  const deleteEmployee = async (id) => {
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/employees/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          // If the DB successfully deleted it, remove it from the UI
+          const updatedEmployees = employees.filter(emp => (emp.id || emp._id) !== id);
+          setEmployees(updatedEmployees);
+        } else {
+          alert('Failed to delete employee from database.');
+        }
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+        alert('Server connection error while deleting.');
+      }
+    }
+  };
+
+  const filteredEmployees = employees.filter(emp => {
+    const name = emp?.name || '';
+    const role = emp?.role || '';
+    const dept = emp?.department || '';
+    
+    return name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           dept.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const formatCurrency = (val) => 
+    new Intl.NumberFormat('en-IN', { 
+      style: 'currency', 
+      currency: 'INR', 
+      maximumFractionDigits: 0 
+    }).format(val);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500" id="employee-list-content">
@@ -40,13 +91,16 @@ const EmployeeCostList = () => {
             <Download className="w-4 h-4" />
             Export CSV
           </button>
-          <Link 
-            to="/employee-cost/add"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            Add Employee
-          </Link>
+          
+          {currentUser?.role !== 'Project Manager' && currentUser?.role !== 'Team Lead' && (
+            <Link 
+              to="/employee-cost/add"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+            >
+              <Plus className="w-4 h-4" />
+              Add Employee
+            </Link>
+          )}
         </div>
       </header>
 
@@ -67,12 +121,6 @@ const EmployeeCostList = () => {
             <Filter className="w-4 h-4" />
             Filters
           </button>
-          <button 
-            onClick={() => exportToPDF('employee-list-content', 'Employee_Cost_Report.pdf')}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-800/50 text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all border border-slate-700"
-          >
-            Report PDF
-          </button>
         </div>
       </div>
 
@@ -91,47 +139,70 @@ const EmployeeCostList = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {filteredEmployees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-slate-800/50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center font-bold text-xs">
-                        {emp.name.split(' ').map(n => n[0]).join('')}
+              {filteredEmployees.length === 0 ? (
+                 <tr>
+                   <td colSpan="6" className="px-6 py-8 text-center text-slate-500 text-sm">
+                     No employees found. Add a new employee to get started.
+                   </td>
+                 </tr>
+              ) : (
+                filteredEmployees.map((emp) => {
+                  // Fallback ID logic in case your DB uses _id instead of id
+                  const empId = emp.id || emp._id; 
+                  
+                  return (
+                  <tr key={empId} className="hover:bg-slate-800/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center font-bold text-xs">
+                          {emp.name ? emp.name.split(' ').map(n => n).join('').substring(0, 2) : '?'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-100">{emp.name}</p>
+                          <p className="text-xs text-slate-400 font-medium">{emp.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-100">{emp.name}</p>
-                        <p className="text-xs text-slate-400 font-medium">{emp.role}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-slate-400">{emp.department}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-100">{formatCurrency(emp.CTC)}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-100">{formatCurrency(emp.monthlyCost)}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      emp.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                    }`}>
-                      {emp.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-slate-400">{emp.department}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-bold text-slate-100">{formatCurrency(emp.CTC || 0)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-bold text-slate-100">{formatCurrency(emp.monthlyCost || 0)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                        emp.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                      }`}>
+                        {emp.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {currentUser?.role !== 'Project Manager' && currentUser?.role !== 'Team Lead' && (
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link 
+                            to={`/employee-cost/edit/${empId}`}
+                            className="p-2 text-slate-500 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-all"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Link>
+                          <button 
+                            onClick={() => deleteEmployee(empId)}
+                            className="p-2 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-lg transition-all">
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )})
+              )}
             </tbody>
           </table>
         </div>

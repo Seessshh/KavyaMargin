@@ -33,11 +33,11 @@ const ScenarioSimulator = () => {
 
   useEffect(() => {
     if (location.state && location.state.importedScenario && processedLocationKey.current !== location.key) {
-      processedLocationKey.current = location.key; 
+      processedLocationKey.current = location.key;
 
       const newScenario = {
         ...location.state.importedScenario,
-        id: Date.now() 
+        id: Date.now()
       };
       
       setScenarios(prev => [...prev, newScenario]);
@@ -65,8 +65,8 @@ const ScenarioSimulator = () => {
   const handleReset = () => {
     // 1. Reset the input boxes
     setSimulation({ 
-      name: 'New Scenario', 
-      billingRate: 50, 
+      name: 'New Scenario',
+      billingRate: 50,
       resources: 12 
     });
     
@@ -81,7 +81,7 @@ const ScenarioSimulator = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500" id="scenario-simulator-content">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-100 tracking-tight flex items-center gap-3">
@@ -90,13 +90,10 @@ const ScenarioSimulator = () => {
           </h1>
           <p className="text-slate-400 mt-2 font-medium">Model "What-If" scenarios to predict the impact of rate or resource changes.</p>
         </div>
-       <button 
-            onClick={() => exportToCSV(scenarios, 'Scenario_Analysis.csv')}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-all shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            Export Analysis
-          </button>
+        <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-all shadow-sm">
+          <Download className="w-4 h-4" />
+          Export Analysis
+        </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

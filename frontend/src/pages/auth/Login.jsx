@@ -1,31 +1,48 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TrendingUp, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
-    // Simple validation against registered user in localStorage
-    const registeredUser = JSON.parse(localStorage.getItem('registeredUser'));
-    
-    if (registeredUser && formData.email === registeredUser.email && formData.password === registeredUser.password) {
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      // Send login credentials to the backend
+      const response = await axios.post("http://localhost:5000/api/auth/login", formData);
+      
+      // If successful, the backend will send back the user data
+      const userData = response.data.user;
+
+      // Store the verified user in localStorage so your RBAC AppRoutes & Sidebar can use it
       localStorage.setItem('currentUser', JSON.stringify({
-        fullName: registeredUser.fullName,
-        email: registeredUser.email,
-        role: registeredUser.role
+        fullName: userData.fullName,
+        email: userData.email,
+        role: userData.userRole, // Your RBAC uses 'userRole'
+        contactNo: userData.contactNo,
+        address: userData.address
       }));
+      
       navigate('/dashboard');
-    } else {
-      setError('Invalid credentials. Please register first or check your details.');
+      
+    } catch (err) {
+      console.error("Login failed:", err);
+      // Display the specific error from the backend (e.g., "Invalid password")
+      setError(err.response?.data?.message || 'Failed to connect to the server.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -53,8 +70,9 @@ const Login = () => {
               <Mail className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
               <input 
                 type="email" 
+                required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setError(''); }}
                 placeholder="name@kavyainfoweb.com"
                 className="w-full pl-12 pr-4 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium"
               />
@@ -70,8 +88,9 @@ const Login = () => {
               <Lock className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
               <input 
                 type={showPassword ? "text" : "password"} 
+                required
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setError(''); }}
                 placeholder="••••••••"
                 className="w-full pl-12 pr-11 py-3.5 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:border-blue-500 outline-none transition-all text-white placeholder:text-slate-600 font-medium"
               />
@@ -85,9 +104,13 @@ const Login = () => {
             </div>
           </div>
 
-          <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] mt-4">
-            Sign In to System
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? "Authenticating..." : "Sign In to System"}
+            {!isSubmitting && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
 

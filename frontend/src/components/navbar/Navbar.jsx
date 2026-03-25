@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, UserCircle, Menu, LogOut, Settings, User, X } from 'lucide-react';
+import { Bell, UserCircle, Menu, LogOut, Settings, User, X, Mail, Phone, MapPin, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 
 const Navbar = ({ onMenuClick }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const userRef = useRef(null);
-  const notificationRef = useRef(null);
   const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -27,20 +25,10 @@ const Navbar = ({ onMenuClick }) => {
       if (userRef.current && !userRef.current.contains(event.target)) {
         setShowUserDropdown(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
-    }
-  };
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -51,12 +39,6 @@ const Navbar = ({ onMenuClick }) => {
       .toUpperCase()
       .slice(0, 2);
   };
-
-  const notifications = [
-    { id: 1, title: 'Margin Alert', message: 'Project Alpha margin dropped below 15%', time: '2m ago', read: false },
-    { id: 2, title: 'New Contract', message: 'SLA analysis ready for review', time: '1h ago', read: false },
-    { id: 3, title: 'System Update', message: 'KavyaMargin v4.2 now live', time: '5h ago', read: true },
-  ];
 
   const handleSignOut = () => {
     localStorage.removeItem('currentUser');
@@ -72,68 +54,9 @@ const Navbar = ({ onMenuClick }) => {
         >
           <Menu className="w-5 h-5 text-slate-400" />
         </button>
-        
-        <form onSubmit={handleSearch} className="relative group hidden md:block">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
-          <input 
-            type="text" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search analytics, projects..."
-            className="pl-10 pr-10 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm w-64 lg:w-80 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-slate-200 transition-all"
-          />
-          {searchQuery && (
-            <button 
-              type="button" 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </form>
-
-        {/* Mobile Search Icon */}
-        <button className="p-2 md:hidden hover:bg-slate-800 rounded-lg transition-colors text-slate-400">
-          <Search className="w-5 h-5" />
-        </button>
       </div>
 
       <div className="flex items-center gap-1 md:gap-3">
-        {/* Notifications Dropdown */}
-        <div className="relative" ref={notificationRef}>
-          <button 
-            onClick={() => setShowNotifications(!showNotifications)}
-            className={`p-2 hover:bg-slate-800 rounded-lg text-slate-400 relative transition-colors ${showNotifications ? 'bg-slate-800' : ''}`}
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-950 shadow-sm" />
-          </button>
-
-          {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 md:w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/50 p-2 animate-in fade-in zoom-in-95 duration-200">
-              <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-                <h3 className="font-bold text-slate-100 text-sm">Notifications</h3>
-                <button className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">Mark all as read</button>
-              </div>
-              <div className="max-h-80 overflow-y-auto py-2 scrollbar-hide">
-                {notifications.map(notif => (
-                  <div key={notif.id} className="p-3 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start">
-                      <p className={`text-xs font-bold ${notif.read ? 'text-slate-400' : 'text-slate-100'}`}>{notif.title}</p>
-                      <span className="text-[10px] text-slate-500 font-medium">{notif.time}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{notif.message}</p>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full mt-2 py-2 text-center text-xs font-bold text-slate-400 hover:bg-slate-800 rounded-lg transition-colors">
-                View All Notifications
-              </button>
-            </div>
-          )}
-        </div>
-        
         <div className="h-8 w-[1px] bg-slate-800 mx-1 md:mx-2" />
         
         {/* User Dropdown */}
@@ -158,14 +81,16 @@ const Navbar = ({ onMenuClick }) => {
                 <p className="text-[10px] text-slate-500 mt-0.5">{currentUser?.email || 'guest@kavyamargin.com'}</p>
               </div>
               <div className="space-y-1">
-                <Link to="/settings" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-blue-400 rounded-lg transition-colors group font-bold">
+                <button 
+                  onClick={() => {
+                    setShowProfileModal(true);
+                    setShowUserDropdown(false);
+                  }} 
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-blue-400 rounded-lg transition-colors group font-bold text-left"
+                >
                   <User className="w-4 h-4 text-slate-500 group-hover:text-blue-500" />
                   My Profile
-                </Link>
-                <Link to="/settings" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-blue-400 rounded-lg transition-colors group font-bold">
-                  <Settings className="w-4 h-4 text-slate-500 group-hover:text-blue-500" />
-                  Account Settings
-                </Link>
+                </button>
                 <div className="h-[1px] bg-slate-800 my-1 mx-2" />
                 <button 
                   onClick={handleSignOut}
@@ -179,6 +104,70 @@ const Navbar = ({ onMenuClick }) => {
           )}
         </div>
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative h-32 bg-gradient-to-r from-blue-600 to-indigo-600">
+              <button 
+                onClick={() => setShowProfileModal(false)}
+                className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="absolute -bottom-12 left-8 w-24 h-24 bg-slate-900 rounded-2xl p-1 shadow-xl">
+                <div className="w-full h-full bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center font-black text-3xl border-2 border-blue-500/20">
+                  {getInitials(currentUser?.fullName)}
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-16 pb-8 px-8">
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-white tracking-tight">{currentUser?.fullName}</h2>
+                <p className="text-blue-500 font-bold uppercase tracking-widest text-xs mt-1">{currentUser?.role}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3 h-3" /> Email Address
+                  </p>
+                  <p className="text-sm text-slate-200 font-bold">{currentUser?.email || 'Not Provided'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Phone className="w-3 h-3" /> Contact Number
+                  </p>
+                  <p className="text-sm text-slate-200 font-bold">{currentUser?.contactNo || 'Not Provided'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Shield className="w-3 h-3" /> User Role
+                  </p>
+                  <p className="text-sm text-slate-200 font-bold">{currentUser?.role || 'Not Provided'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <MapPin className="w-3 h-3" /> Office Location
+                  </p>
+                  <p className="text-sm text-slate-200 font-bold">{currentUser?.address || 'Not Provided'}</p>
+                </div>
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-slate-800">
+                <button 
+                  onClick={() => setShowProfileModal(false)}
+                  className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all"
+                >
+                  Close Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

@@ -1,137 +1,271 @@
-import React, { useState } from 'react';
-import { FileText, Upload, CheckCircle2, AlertCircle, Clock, Search, FileCode } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  BrainCircuit,
+  FileSearch,
+  AlertTriangle,
+  FileCode
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const UploadContract = () => {
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState([
-    { name: 'Service_Agreement_TechCorp.pdf', size: '2.4 MB', status: 'Analyzed', date: '2026-03-01' },
-    { name: 'SLA_Cloud_Migration.docx', size: '1.1 MB', status: 'Processing', date: '2026-03-05' },
-  ]);
+
+  const [appState, setAppState] = useState('idle');
+  const [analysisStep, setAnalysisStep] = useState('');
+  const [results, setResults] = useState(null);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    setCurrentUser(user);
+
+    if (
+      user?.role === 'Project Manager' ||
+      user?.role === 'Team Lead' ||
+      user?.role === 'HR' ||
+      user?.role === 'Viewers'
+    ) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
+
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave' || e.type === 'drop') setDragActive(false);
+  };
+
+  const processFile = async (file) => {
+    if (!file) return;
+
+    // safer file validation
+    const allowedTypes = [
+      'application/pdf',
+      'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    const allowedExtensions = ['pdf', 'txt', 'docx'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      alert('Upload Blocked: Only PDF, DOCX, or TXT files are allowed.');
+      return;
     }
+
+    setAppState('analyzing');
+
+    setTimeout(() => setAnalysisStep('Extracting text via OCR...'), 500);
+    setTimeout(() => setAnalysisStep('Applying NLP models...'), 2000);
+    setTimeout(() => setAnalysisStep('Classifying clauses...'), 3500);
+    setTimeout(() => setAnalysisStep('Running risk detection...'), 5000);
+
+    const formData = new FormData();
+    formData.append('contract', file);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/contracts/analyze', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Failed to analyze contract');
+
+      const data = await response.json();
+
+      const mappedData = {
+        ...data,
+        clauses: data.clauses.map((c) => ({
+          ...c,
+          icon:
+            c.iconName === 'ShieldCheck'
+              ? CheckCircle2
+              : c.iconName === 'AlertTriangle'
+              ? AlertTriangle
+              : CheckCircle2
+        }))
+      };
+
+      setTimeout(() => {
+        localStorage.setItem('latestContractAnalysis', JSON.stringify(data));
+        setResults(mappedData);
+        setAppState('results');
+      }, 6500);
+    } catch (error) {
+      console.error(error);
+      alert('Error analyzing contract. Make sure backend is running.');
+      resetAnalyzer();
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const resetAnalyzer = () => {
+    setAppState('idle');
+    setResults(null);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+
       <header>
-        <h1 className="text-3xl font-bold text-slate-100 tracking-tight flex items-center gap-3">
-          <Upload className="w-8 h-8 text-blue-500" />
-          Contract Upload & Analysis
+        <h1 className="text-3xl font-bold text-slate-100 flex items-center gap-3">
+          <BrainCircuit className="w-8 h-8 text-blue-500" />
+          AI Contract Analyzer
         </h1>
-        <p className="text-slate-400 mt-2 font-medium">Upload legal documents for automated AI analysis of margins, SLAs, and compliance.</p>
+        <p className="text-slate-400 mt-2">
+          Upload PDF, DOCX, or TXT agreements for automated analysis.
+        </p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Upload Zone */}
-        <div className="lg:col-span-2 space-y-6">
-          <div 
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            className={`relative h-80 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${
-              dragActive ? 'border-blue-500 bg-blue-500/10 scale-[1.01]' : 'border-slate-800 bg-slate-900/50 backdrop-blur-xl'
-            }`}
-          >
-            <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mb-4">
-              <Upload className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-100">Drag & Drop Contracts</h3>
-            <p className="text-sm text-slate-400 mt-1 font-medium">or click to browse from your computer</p>
-            <p className="text-[10px] text-slate-500 mt-4 uppercase font-bold tracking-widest">Supports PDF, DOCX, TXT (Max 25MB)</p>
-            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
-          </div>
 
-          {/* Recent Uploads */}
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-              <h4 className="font-bold text-slate-100">Recent Uploads</h4>
-              <button className="text-xs font-bold text-blue-400 hover:text-blue-300 uppercase tracking-widest transition-colors">View All</button>
-            </div>
-            <div className="divide-y divide-slate-800">
-              {uploadedFiles.map((file, i) => (
-                <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-slate-800 rounded-lg">
-                      <FileText className="w-5 h-5 text-slate-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-100">{file.name}</p>
-                      <p className="text-[10px] text-slate-500 font-medium">{file.size} • {file.date}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      file.status === 'Analyzed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                    }`}>
-                      {file.status}
-                    </span>
-                    {file.status === 'Analyzed' && (
-                      <button className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors">View Insights</button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* MAIN UPLOAD AREA */}
+        <div className="lg:col-span-2">
 
-        {/* AI Processing Info */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 p-8 rounded-3xl shadow-xl shadow-black/20 text-white border border-slate-800">
-            <h4 className="font-bold text-lg mb-6 flex items-center gap-2">
-              <FileCode className="w-5 h-5 text-blue-400" />
-              Analysis Engine
-            </h4>
+          {appState === 'idle' && (
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`relative h-96 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition ${
+                dragActive
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-slate-800 bg-slate-900'
+              }`}
+            >
+              <Upload className="w-12 h-12 text-blue-400 mb-4" />
+
+              <h3 className="text-xl font-bold text-white">
+                Drag & Drop Contract
+              </h3>
+
+              <p className="text-slate-400 mt-2">
+                or click to browse
+              </p>
+
+              <input
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={handleFileChange}
+                accept=".pdf,.docx,.txt"
+              />
+            </div>
+          )}
+
+          {appState === 'analyzing' && (
+            <div className="h-96 flex flex-col items-center justify-center border border-blue-500 rounded-2xl bg-slate-900">
+              <BrainCircuit className="w-16 h-16 text-blue-400 animate-bounce mb-4" />
+
+              <h3 className="text-xl font-bold text-white">
+                AI Engine Processing
+              </h3>
+
+              <p className="text-blue-400 mt-2">{analysisStep}</p>
+            </div>
+          )}
+
+          {appState === 'results' && results && (
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/30">
-                  <span className="text-[10px] font-bold text-blue-400">01</span>
-                </div>
+
+              <div className="flex justify-between items-center bg-slate-900 p-4 rounded-xl">
                 <div>
-                  <p className="text-sm font-bold text-slate-100">Clause Extraction</p>
-                  <p className="text-xs text-slate-400 mt-1">Identifies payment terms, penalties, and resource obligations.</p>
+                  <h3 className="text-white font-bold">{results.fileName}</h3>
+                  <p className="text-green-400 text-sm">Analysis Complete</p>
                 </div>
+
+                <button
+                  onClick={resetAnalyzer}
+                  className="px-4 py-2 bg-slate-800 text-white rounded-lg"
+                >
+                  Analyze Another
+                </button>
               </div>
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/30">
-                  <span className="text-[10px] font-bold text-blue-400">02</span>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                <div className="bg-slate-900 p-4 rounded-xl">
+                  <p className="text-xs text-slate-400">Client</p>
+                  <p className="text-white font-bold">
+                    {results.entities.client}
+                  </p>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-100">Margin Validation</p>
-                  <p className="text-xs text-slate-400 mt-1">Cross-references billing rates with internal cost sheets.</p>
+
+                <div className="bg-slate-900 p-4 rounded-xl">
+                  <p className="text-xs text-slate-400">Start Date</p>
+                  <p className="text-white font-bold">
+                    {results.entities.startDate}
+                  </p>
                 </div>
+
+                <div className="bg-slate-900 p-4 rounded-xl">
+                  <p className="text-xs text-slate-400">End Date</p>
+                  <p className="text-white font-bold">
+                    {results.entities.endDate}
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 p-4 rounded-xl">
+                  <p className="text-xs text-slate-400">Payment</p>
+                  <p className="text-blue-400 font-bold">
+                    {results.entities.payment}
+                  </p>
+                </div>
+
               </div>
-              <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/30">
-                  <span className="text-[10px] font-bold text-blue-400">03</span>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-100">Risk Scoring</p>
-                  <p className="text-xs text-slate-400 mt-1">Flags unfavorable terms or potential compliance issues.</p>
-                </div>
-              </div>
+
             </div>
+          )}
+
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="space-y-6">
+
+          <div className="bg-blue-600/10 p-6 rounded-2xl border border-blue-500/20">
+            <h4 className="font-bold text-blue-400 flex items-center gap-2 mb-4">
+              <FileCode className="w-5 h-5" />
+              NLP Workflow
+            </h4>
+
+            <ul className="text-sm text-slate-300 space-y-2">
+              <li>1. OCR Text Extraction</li>
+              <li>2. Entity Recognition</li>
+              <li>3. Clause Classification</li>
+              <li>4. Risk Detection</li>
+            </ul>
           </div>
 
-          <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
-            <div className="flex gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
-              <div>
-                <h5 className="text-xs font-bold text-amber-100 uppercase tracking-widest">Compliance Tip</h5>
-                <p className="text-xs text-amber-300 mt-1 leading-relaxed font-medium">
-                  Ensure all signed addendums are uploaded along with the master service agreement for 100% accuracy.
-                </p>
-              </div>
-            </div>
+          <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/20">
+            <p className="text-xs text-amber-300">
+              Supports <b>PDF, DOCX, TXT</b>. Ensure files are not password protected.
+            </p>
           </div>
+
         </div>
+
       </div>
     </div>
   );

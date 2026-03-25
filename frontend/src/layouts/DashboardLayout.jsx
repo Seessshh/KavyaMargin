@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/sidebar/Sidebar_manager';
+// Make sure this path matches your actual file structure!
+import Sidebar from '../components/sidebar/Sidebar_manager'; // or just Sidebar depending on what you named the RBAC one
 import Navbar from '../components/navbar/Navbar';
 
 const DashboardLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50 dark:bg-slate-950 transition-colors">
+    // CHANGED: Removed solid backgrounds and added bg-transparent
+    <div className="flex min-h-screen bg-transparent transition-colors w-full">
+      
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 

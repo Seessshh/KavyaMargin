@@ -105,7 +105,7 @@ export const exportToPDF = async (elementId, fileName) => {
   const pageWidth = pdf.internal.pageSize.getWidth();
   const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-  pdf.addImage(imgData, "PNG", 0, 10, pageWidth, imgHeight);
+  pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
 
   pdf.save(fileName);
 };
@@ -138,5 +138,45 @@ export const exportToCSV = (data, fileName) => {
 
   link.download = fileName;
 
+  link.click();
+};
+
+/* XML EXPORT */
+
+export const exportToXML = (data, fileName = 'data.xml', rootName = 'Records') => {
+  if (!data || !data.length) return;
+
+  const escapeXML = (str) => {
+    if (typeof str !== 'string') return str;
+    return str.replace(/[<>&"']/g, (c) => {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '"': return '&quot;';
+        case "'": return '&apos;';
+        default: return c;
+      }
+    });
+  };
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += `<${rootName}>\n`;
+
+  data.forEach((item) => {
+    xml += '  <Record>\n';
+    Object.entries(item).forEach(([key, value]) => {
+      const tagName = key.replace(/[^a-zA-Z0-9]/g, '_');
+      xml += `    <${tagName}>${escapeXML(value)}</${tagName}>\n`;
+    });
+    xml += '  </Record>\n';
+  });
+
+  xml += `</${rootName}>`;
+
+  const blob = new Blob([xml], { type: 'application/xml' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
   link.click();
 };
