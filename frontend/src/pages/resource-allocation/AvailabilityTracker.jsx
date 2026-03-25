@@ -27,8 +27,8 @@ const AvailabilityTracker = () => {
     const fetchData = async () => {
       try {
         const [empRes, projRes] = await Promise.all([
-          fetch('http://localhost:5000/api/employees'),
-          fetch('http://localhost:5000/api/projects')
+          fetch('https://kavyamargin.onrender.com/api/employees'),
+          fetch('https://kavyamargin.onrender.com/api/projects')
         ]);
 
         if (empRes.ok) {
@@ -128,7 +128,7 @@ const AvailabilityTracker = () => {
     };
 
     try {
-      const response = await fetch(`http://localhost:5000/api/employees/${selectedEmp.id || selectedEmp._id}`, {
+      const response = await fetch(`https://kavyamargin.onrender.com/api/employees/${selectedEmp.id || selectedEmp._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload),

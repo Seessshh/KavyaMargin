@@ -17,8 +17,8 @@ const DepartmentMapping = () => {
   const fetchData = async () => {
     try {
       const [deptRes, empRes] = await Promise.all([
-        fetch('http://localhost:5000/api/departments'),
-        fetch('http://localhost:5000/api/employees')
+        fetch('https://kavyamargin.onrender.com/api/departments'),
+        fetch('https://kavyamargin.onrender.com/api/employees')
       ]);
 
       if (deptRes.ok) {
@@ -43,7 +43,7 @@ const DepartmentMapping = () => {
     
     setIsSaving(true);
     try {
-      const response = await fetch('http://localhost:5000/api/departments', {
+      const response = await fetch('https://kavyamargin.onrender.com/api/departments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDept)
@@ -68,7 +68,7 @@ const DepartmentMapping = () => {
     if (!window.confirm("Are you sure you want to delete this department?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/departments/${id}`, {
+      const response = await fetch(`https://kavyamargin.onrender.com/api/departments/${id}`, {
         method: 'DELETE'
       });
 

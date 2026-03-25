@@ -28,7 +28,7 @@ const BenchList = () => {
 
   const fetchBenchData = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/employees');
+      const response = await fetch('https://kavyamargin.onrender.com/api/employees');
       if (response.ok) {
         const dbEmployees = await response.json();
         // Filter ONLY employees who are currently on the bench

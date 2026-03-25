@@ -17,7 +17,7 @@ const EmployeeCostList = () => {
     // FETCH FROM MONGODB
     const fetchEmployees = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/employees');
+        const response = await fetch('https://kavyamargin.onrender.com/api/employees');
         if (response.ok) {
           const dbEmployees = await response.json();
           if (Array.isArray(dbEmployees)) {
@@ -38,7 +38,7 @@ const EmployeeCostList = () => {
   const deleteEmployee = async (id) => {
     if (window.confirm('Are you sure you want to delete this employee?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/employees/${id}`, {
+        const response = await fetch(`https://kavyamargin.onrender.com/api/employees/${id}`, {
           method: 'DELETE',
         });
 

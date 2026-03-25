@@ -37,7 +37,7 @@ const AddEmployeeCost = () => {
     // 2. Fetch Departments for the Dropdown
     const fetchDepartments = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/departments');
+        const response = await fetch('https://kavyamargin.onrender.com/api/departments');
         if (response.ok) {
           const data = await response.json();
           setDepartments(data);
@@ -56,7 +56,7 @@ const AddEmployeeCost = () => {
       if (id) {
         setIsEditMode(true);
         try {
-          const response = await fetch('http://localhost:5000/api/employees');
+          const response = await fetch('https://kavyamargin.onrender.com/api/employees');
           if (response.ok) {
             const employees = await response.json();
             const employeeToEdit = employees.find(emp => (emp.id || emp._id) === id);
@@ -135,8 +135,8 @@ const AddEmployeeCost = () => {
 
     try {
       const url = isEditMode 
-        ? `http://localhost:5000/api/employees/${id}` 
-        : 'http://localhost:5000/api/employees';
+        ? `https://kavyamargin.onrender.com/api/employees/${id}` 
+        : 'https://kavyamargin.onrender.com/api/employees';
       
       const method = isEditMode ? 'PUT' : 'POST';
 

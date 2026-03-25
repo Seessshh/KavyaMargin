@@ -80,7 +80,7 @@ const Register = () => {
       // Send data to the backend API (ignoring confirmPassword)
       const { confirmPassword, ...userData } = formData;
       
-      const response = await axios.post("http://localhost:5000/api/auth/register", userData);
+      const response = await axios.post("https://kavyamargin.onrender.com/api/auth/register", userData);
       
       alert('Registration successful! Please login.');
       navigate('/login');

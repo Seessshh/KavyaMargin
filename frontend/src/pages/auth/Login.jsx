@@ -21,7 +21,7 @@ const Login = () => {
 
     try {
       // Send login credentials to the backend
-      const response = await axios.post("http://localhost:5000/api/auth/login", formData);
+      const response = await axios.post("https://kavyamargin.onrender.com/api/auth/login", formData);
       
       // If successful, the backend will send back the user data
       const userData = response.data.user;

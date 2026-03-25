@@ -3,7 +3,7 @@ import { Lightbulb, TrendingUp, AlertTriangle, CheckCircle2, Download, FileText,
 import { exportToCSV } from '../../utils/exportUtils';
 import { Link } from 'react-router-dom';
 
-const API_BASE = 'http://localhost:5000/api/contracts'; // Adjust this to your API URL
+const API_BASE = 'https://kavyamargin.onrender.com/api/contracts'; // Adjust this to your API URL
 
 const ContractInsights = () => {
   const [insights, setInsights] = useState([]);

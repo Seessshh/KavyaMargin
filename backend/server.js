@@ -28,7 +28,7 @@ const __dirname = path.resolve();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'], // Add your React port here
+  origin: ['https://kavyamargin.onrender.com'], // Add your React port here
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));

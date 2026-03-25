@@ -16,7 +16,7 @@ const BillingModel = () => {
 
   const fetchModels = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/billing-models');
+      const response = await fetch('https://kavyamargin.onrender.com/api/billing-models');
       if (response.ok) {
         const data = await response.json();
         setModels(data);
@@ -42,7 +42,7 @@ const BillingModel = () => {
         status: 'Active' 
       };
       
-      const response = await fetch('http://localhost:5000/api/billing-models', {
+      const response = await fetch('https://kavyamargin.onrender.com/api/billing-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -68,7 +68,7 @@ const BillingModel = () => {
     if (!window.confirm("Are you sure you want to delete this billing model?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/billing-models/${id}`, {
+      const response = await fetch(`https://kavyamargin.onrender.com/api/billing-models/${id}`, {
         method: 'DELETE'
       });
 

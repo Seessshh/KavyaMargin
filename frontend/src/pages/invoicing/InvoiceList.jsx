@@ -27,7 +27,7 @@ const InvoiceList = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/invoices');
+        const response = await axios.get('https://kavyamargin.onrender.com/api/invoices');
         setInvoices(response.data);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -44,7 +44,7 @@ const InvoiceList = () => {
 
     if (!window.confirm("Delete this invoice?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/invoices/${id}`);
+      await axios.delete(`https://kavyamargin.onrender.com/api/invoices/${id}`);
       setInvoices(invoices.filter(inv => inv._id !== id));
     } catch (err) {
       console.error("Failed to delete:", err);
@@ -55,7 +55,7 @@ const InvoiceList = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`http://localhost:5000/api/invoices/${editingInvoice._id}`, editingInvoice);
+      const response = await axios.put(`https://kavyamargin.onrender.com/api/invoices/${editingInvoice._id}`, editingInvoice);
       
       setInvoices(invoices.map(inv => inv._id === editingInvoice._id ? response.data : inv));
       

@@ -21,7 +21,7 @@ const GenerateInvoice = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/projects");
+        const response = await axios.get("https://kavyamargin.onrender.com/api/projects");
         const projectData = Array.isArray(response.data) ? response.data : response.data.data || response.data.projects || [];
         setProjects(projectData);
       } catch (error) {
@@ -86,7 +86,7 @@ const GenerateInvoice = () => {
     };
 
     try {
-      const response = await axios.post("http://localhost:5000/api/invoices", invoiceData);
+      const response = await axios.post("https://kavyamargin.onrender.com/api/invoices", invoiceData);
      
       alert("Invoice created successfully in MongoDB!");
       navigate("/invoicing/list");

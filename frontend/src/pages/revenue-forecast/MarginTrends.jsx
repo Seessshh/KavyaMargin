@@ -26,7 +26,7 @@ const MarginTrends = () => {
     const fetchMargins = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/api/projects');
+        const response = await fetch('https://kavyamargin.onrender.com/api/projects');
         
         if (response.ok) {
           const rawData = await response.json();

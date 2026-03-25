@@ -13,7 +13,7 @@ const BurnRate = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/projects');
+        const response = await fetch('https://kavyamargin.onrender.com/api/projects');
         if (response.ok) {
           const dbProjects = await response.json();
           if (Array.isArray(dbProjects)) {

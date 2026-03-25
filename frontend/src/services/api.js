@@ -3,7 +3,7 @@
 
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api'; 
+const API_URL = 'https://kavyamargin.onrender.com/api'; 
 
 export const getInvoices = async () => {
   const response = await axios.get(`${API_URL}/invoices`);

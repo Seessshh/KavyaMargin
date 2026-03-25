@@ -31,7 +31,7 @@ const BillingRateConfig = () => {
 
   const fetchRates = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/billing-rates');
+      const response = await axios.get('https://kavyamargin.onrender.com/api/billing-rates');
       setRates(response.data);
     } catch (error) {
       console.error("Error fetching rates:", error);
@@ -69,10 +69,10 @@ const BillingRateConfig = () => {
 
       if (editingRate) {
         // Update existing
-        await axios.put(`http://localhost:5000/api/billing-rates/${editingRate._id}`, payload);
+        await axios.put(`https://kavyamargin.onrender.com/api/billing-rates/${editingRate._id}`, payload);
       } else {
         // Create new
-        await axios.post('http://localhost:5000/api/billing-rates', payload);
+        await axios.post('https://kavyamargin.onrender.com/api/billing-rates', payload);
       }
       
       fetchRates(); // Refresh table
@@ -87,7 +87,7 @@ const BillingRateConfig = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this billing rate?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/billing-rates/${id}`);
+      await axios.delete(`https://kavyamargin.onrender.com/api/billing-rates/${id}`);
       setRates(rates.filter(r => r._id !== id));
     } catch (error) {
       console.error("Error deleting rate:", error);

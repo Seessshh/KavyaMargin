@@ -83,9 +83,9 @@ const Dashboard = () => {
       
       // Fetch everything concurrently to save time
       const [projRes, empRes, invRes] = await Promise.all([
-        fetch('http://localhost:5000/api/projects').catch(() => ({ ok: false })),
-        fetch('http://localhost:5000/api/employees').catch(() => ({ ok: false })),
-        fetch('http://localhost:5000/api/invoices').catch(() => ({ ok: false }))
+        fetch('https://kavyamargin.onrender.com/api/projects').catch(() => ({ ok: false })),
+        fetch('https://kavyamargin.onrender.com/api/employees').catch(() => ({ ok: false })),
+        fetch('https://kavyamargin.onrender.com/api/invoices').catch(() => ({ ok: false }))
       ]);
 
       const projects = projRes.ok ? await projRes.json().then(d => Array.isArray(d) ? d : d.data || d.projects || []) : [];

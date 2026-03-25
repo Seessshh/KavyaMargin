@@ -32,7 +32,7 @@ const ForecastReport = () => {
     const fetchReports = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/api/reports');
+        const response = await fetch('https://kavyamargin.onrender.com/api/reports');
         
         if (response.ok) {
           const rawData = await response.json();
@@ -90,8 +90,8 @@ const ForecastReport = () => {
   const downloadReport = async (report) => {
     try {
       // 1. Try to download the real file from your backend
-      const response = await fetch(`http://localhost:5000/api/reports/download/${report.id}`);
-      
+      const response = await fetch(`https://kavyamargin.onrender.com/api/reports/download/${report.id}`);
+
       if (!response.ok) throw new Error("Backend file missing");
 
       const blob = await response.blob();

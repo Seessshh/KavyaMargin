@@ -71,7 +71,7 @@ const UploadContract = () => {
     formData.append('contract', file);
 
     try {
-      const response = await fetch('http://localhost:5000/api/contracts/analyze', {
+      const response = await fetch('https://kavyamargin.onrender.com/api/contracts/analyze', {
         method: 'POST',
         body: formData
       });

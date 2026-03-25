@@ -35,7 +35,7 @@ const MarginPrediction = () => {
   useEffect(() => {
     const fetchAndCalculateForecast = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/employees');
+        const response = await fetch('https://kavyamargin.onrender.com/api/employees');
         if (response.ok) {
           const employees = await response.json();
 

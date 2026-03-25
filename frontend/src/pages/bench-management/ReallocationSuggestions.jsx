@@ -23,8 +23,8 @@ const ReallocationSuggestions = () => {
         setIsLoading(true);
         // Fetch both employees and projects simultaneously
         const [empRes, projRes] = await Promise.all([
-          fetch('http://localhost:5000/api/employees'),
-          fetch('http://localhost:5000/api/projects')
+          fetch('https://kavyamargin.onrender.com/employees'),
+          fetch('https://kavyamargin.onrender.com/projects')
         ]);
 
         if (empRes.ok && projRes.ok) {

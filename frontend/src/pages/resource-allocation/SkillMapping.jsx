@@ -26,7 +26,7 @@ const SkillMapping = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/employees');
+        const response = await fetch('https://kavyamargin.onrender.com/api/employees');
         if (response.ok) {
           const dbEmployees = await response.json();
           if (Array.isArray(dbEmployees)) {
@@ -78,7 +78,7 @@ const SkillMapping = () => {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/employees/${selectedEmp.id || selectedEmp._id}`, {
+      const response = await fetch(`https://kavyamargin.onrender.com/api/employees/${selectedEmp.id || selectedEmp._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

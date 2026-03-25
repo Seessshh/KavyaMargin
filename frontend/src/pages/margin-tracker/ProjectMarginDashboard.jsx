@@ -30,7 +30,7 @@ const ProjectMarginDashboard = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/projects');
+        const response = await fetch('https://kavyamargin.onrender.com/api/projects');
         if (response.ok) {
           const dbProjects = await response.json();
           if (Array.isArray(dbProjects)) {
@@ -115,7 +115,7 @@ const ProjectMarginDashboard = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch('https://kavyamargin.onrender.com/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(projectDataToSave),
@@ -139,7 +139,7 @@ const ProjectMarginDashboard = () => {
     if (!window.confirm("Are you sure you want to remove this project?")) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/projects/${id}`, {
+      const response = await fetch(`https://kavyamargin.onrender.com/api/projects/${id}`, {
         method: 'DELETE'
       });
 

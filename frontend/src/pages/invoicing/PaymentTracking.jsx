@@ -34,7 +34,7 @@ const PaymentTracking = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/invoices");
+        const response = await axios.get("https://kavyamargin.onrender.com/api/invoices");
         setInvoices(response.data);
       } catch (error) {
         console.error("Error fetching payment data:", error);

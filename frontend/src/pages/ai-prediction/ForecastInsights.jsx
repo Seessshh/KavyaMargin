@@ -47,8 +47,8 @@ const ForecastInsights = () => {
       try {
         setIsLoading(true);
         const [empRes, projRes] = await Promise.all([
-          fetch('http://localhost:5000/api/employees'),
-          fetch('http://localhost:5000/api/projects')
+          fetch('https://kavyamargin.onrender.com/api/employees'),
+          fetch('https://kavyamargin.onrender.com/api/projects')
         ]);
 
         if (empRes.ok && projRes.ok) {

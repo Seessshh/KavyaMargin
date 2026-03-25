@@ -33,7 +33,7 @@ const MarginCalculator = () => {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/billing-rates');
+        const response = await axios.get('https://kavyamargin.onrender.com/api/billing-rates');
         setDbRates(response.data);
       } catch (error) {
         console.error("Error fetching billing rates:", error);
