@@ -87,7 +87,7 @@ const GenerateInvoice = () => {
 
     try {
       const response = await axios.post("http://localhost:5000/api/invoices", invoiceData);
-      console.log("Saved to MongoDB:", response.data);
+     
       alert("Invoice created successfully in MongoDB!");
       navigate("/invoicing/list");
     } catch (error) {

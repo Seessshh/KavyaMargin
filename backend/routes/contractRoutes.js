@@ -367,8 +367,6 @@ router.post('/analyze', upload.single('contract'), async (req, res) => {
       return res.status(400).json({ message: 'No file uploaded.' });
     }
 
-    console.log(`\n======================================`);
-    console.log(`[Contract Engine] Processing: ${req.file.originalname}`);
 
     let extractedText = "";
 
@@ -377,7 +375,7 @@ router.post('/analyze', upload.single('contract'), async (req, res) => {
       if (req.file.originalname.match(/\.pdf$/i)) {
         const dataBuffer = fs.readFileSync(req.file.path);
         extractedText = await extractTextFromPDF(dataBuffer);
-        console.log(`[Contract Engine] Extraction Success: ${extractedText.length} chars.`);
+       
       } else {
         extractedText = fs.readFileSync(req.file.path, 'utf8');
       }
@@ -389,7 +387,7 @@ router.post('/analyze', upload.single('contract'), async (req, res) => {
 
     // --- STEP 2: AI-FREE ANALYSIS ---
     try {
-      console.log(`[Contract Engine] Performing AI-free text analysis...`);
+      
       
       // Extract entities, risks, and clauses using text parsing
       const entities = extractEntitiesFromText(extractedText);
@@ -413,16 +411,12 @@ router.post('/analyze', upload.single('contract'), async (req, res) => {
       analysisResult.contractId = contractId;
       analysisResult.fileName = req.file.originalname;
       
-      console.log(`[Contract Engine] ✅ SUCCESS: Text analysis complete`);
-      console.log(`[Contract Engine] Entities extracted:`, Object.keys(entities).length);
-      console.log(`[Contract Engine] Risks identified:`, risks.length);
-      console.log(`[Contract Engine] Clauses found:`, clauses.length);
-      console.log(`[Contract Engine] Stored contract with ID: ${contractId}`);
+
 
       // Clean up the local file from /uploads
       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
-      console.log(`[Contract Engine] Analysis Complete. Sending to UI.`);
+     
       res.status(200).json(analysisResult);
 
     } catch (analysisError) {
